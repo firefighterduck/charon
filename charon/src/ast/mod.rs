@@ -5,6 +5,7 @@ pub mod gast;
 pub mod gast_utils;
 pub mod hash_cons;
 pub mod krate;
+pub mod layout_computer;
 pub mod llbc_ast;
 pub mod llbc_ast_utils;
 pub mod meta;

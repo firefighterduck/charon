@@ -2,6 +2,12 @@
 use std::path::PathBuf;
 
 use charon_lib::ast::*;
+use indexmap::IndexMap;
+
+use charon_lib::{
+    ast::{layout_computer::LayoutComputer, *},
+    pretty::{self, FmtWithCtx},
+};
 
 mod util;
 use util::*;
@@ -133,6 +139,7 @@ fn type_layout() -> anyhow::Result<()> {
             Second(&'a T),
         }
 
+        #[derive(Debug)]
         enum GenericButFixedSize<'a, T: Sized> {
             First,
             Second(&'a T),
@@ -190,6 +197,20 @@ fn type_layout() -> anyhow::Result<()> {
         }
     }
 
+    let mut layout_computer = LayoutComputer::new(&crate_data);
+    let mut layouts_hints = IndexMap::new();
+    let mut ctx = pretty::formatter::FmtCtx::new();
+    ctx.translated = Some(&crate_data);
+    {
+        let mut visitor = DynVisitor::new_shared(|ty: &Ty| {
+            let layout = layout_computer.get_layout_of(ty);
+            let id = ty.to_string_with_ctx(&ctx);
+            layouts_hints.insert(id, layout);
+        });
+        let _ = crate_data.drive(&mut visitor);
+    }
+    let layouts_hints_str = serde_json::to_string_pretty(&layouts_hints)?;
+
     let layouts: SeqHashMap<String, Option<Layout>> = crate_data
         .type_decls
         .iter()
@@ -204,5 +225,9 @@ fn type_layout() -> anyhow::Result<()> {
     let layouts_str = serde_json::to_string_pretty(&layouts)?;
 
     compare_or_overwrite(layouts_str, &PathBuf::from("./tests/layout.json"))?;
+    compare_or_overwrite(
+        layouts_hints_str,
+        &PathBuf::from("./tests/layouts_and_hints.json"),
+    )?;
     Ok(())
 }
