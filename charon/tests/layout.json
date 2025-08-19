@@ -659,4 +659,5 @@
     "uninhabited": false,
     "variant_layouts": []
   }
+  "test_crate::NestedPointers": null
 }
