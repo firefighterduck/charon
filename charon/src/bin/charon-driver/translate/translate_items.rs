@@ -437,12 +437,15 @@ impl ItemTransCtx<'_, '_> {
 
         // Translate type body
         let kind = match &def.kind {
-            _ if item_meta.opacity.is_opaque() => Ok(TypeDeclKind::Opaque),
-            hax::FullDefKind::OpaqueTy | hax::FullDefKind::ForeignTy => Ok(TypeDeclKind::Opaque),
+            _ if item_meta.opacity.is_opaque() => Ok((TypeDeclKind::Opaque, None)),
+            hax::FullDefKind::OpaqueTy | hax::FullDefKind::ForeignTy => {
+                Ok((TypeDeclKind::Opaque, None))
+            }
             hax::FullDefKind::TyAlias { ty, .. } => {
                 // Don't error on missing trait refs.
                 self.error_on_impl_expr_error = false;
-                self.translate_ty(span, ty).map(TypeDeclKind::Alias)
+                self.translate_ty(span, ty)
+                    .map(|x| (TypeDeclKind::Alias(x), None))
             }
             hax::FullDefKind::Adt { repr: hax_repr, .. } => {
                 repr = Some(self.translate_repr_options(hax_repr));
@@ -454,9 +457,9 @@ impl ItemTransCtx<'_, '_> {
             _ => panic!("Unexpected item when translating types: {def:?}"),
         };
 
-        let kind = match kind {
+        let (kind, repr) = match kind {
             Ok(kind) => kind,
-            Err(err) => TypeDeclKind::Error(err.msg),
+            Err(err) => (TypeDeclKind::Error(err.msg), None),
         };
         let layout = self.translate_layout(def.this());
         let ptr_metadata = self.translate_ptr_metadata(span, def.this())?;
