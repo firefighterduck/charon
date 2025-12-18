@@ -1,11 +1,10 @@
 use std::path::PathBuf;
 
 use charon_lib::ast::*;
-use either::Either;
 use indexmap::IndexMap;
 
 use charon_lib::{
-    ast::{layout_computer::LayoutComputer, *},
+    ast::layout_computer::LayoutComputer,
     formatter::AstFormatter,
     pretty::{self, FmtWithCtx},
 };
@@ -335,7 +334,7 @@ fn metadata() -> anyhow::Result<()> {
     let mut fun_sig_visitor = DynVisitor::new_shared(|fun_decl: &FunDecl| {
         if fun_decl.item_meta.name.name[0].as_ident().unwrap().0 == "test_crate" {
             let fun_sig = &fun_decl.signature;
-            let generic_ctx = Some(&fun_sig.generics);
+            let generic_ctx = Some(&fun_decl.generics);
             for arg in &fun_sig.inputs {
                 if arg.is_box() {
                     let tvar = arg

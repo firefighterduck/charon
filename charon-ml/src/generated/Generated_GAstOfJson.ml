@@ -1669,26 +1669,6 @@ and repr_options_of_json (ctx : of_json_ctx) (js : json) :
             : repr_options)
     | _ -> Error "")
 
-and repr_options_of_json (ctx : of_json_ctx) (js : json) :
-    (repr_options, string) result =
-  combine_error_msgs js __FUNCTION__
-    (match js with
-    | `Assoc
-        [
-          ("align", align);
-          ("pack", pack);
-          ("c", c);
-          ("transparent", transparent);
-          ("explicit_discr_type", explicit_discr_type);
-        ] ->
-        let* align = option_of_json int_of_json ctx align in
-        let* pack = option_of_json int_of_json ctx pack in
-        let* c = bool_of_json ctx c in
-        let* transparent = bool_of_json ctx transparent in
-        let* explicit_discr_type = bool_of_json ctx explicit_discr_type in
-        Ok ({ align; pack; c; transparent; explicit_discr_type } : repr_options)
-    | _ -> Error "")
-
 and rvalue_of_json (ctx : of_json_ctx) (js : json) : (rvalue, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with

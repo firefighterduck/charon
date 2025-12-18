@@ -1,6 +1,6 @@
 //! This file groups everything which is linked to implementations about [crate::types]
 use crate::ast::*;
-use crate::ids::IndexMap;
+use crate::ids::{IndexMap, IndexVec};
 use derive_generic_visitor::*;
 use itertools::Itertools;
 use std::collections::HashSet;
@@ -864,7 +864,7 @@ impl Ty {
             TyKind::Adt(type_decl_ref) => match type_decl_ref.id {
                 TypeId::Adt(type_decl_id) => {
                     match krate.type_decls.get(type_decl_id).unwrap().ptr_metadata {
-                        Some(PtrMetadata::Length) | Some(PtrMetadata::VTable(_)) => Some(true),
+                        PtrMetadata::Length | PtrMetadata::VTable(_) => Some(true),
                         _ => Some(false),
                     }
                 }
@@ -874,6 +874,7 @@ impl Ty {
             },
             TyKind::DynTrait(_) => Some(true),
             TyKind::Literal(_)
+            | TyKind::PtrMetadata(_)
             | TyKind::Never
             | TyKind::Ref(_, _, _)
             | TyKind::RawPtr(_, _)
@@ -951,6 +952,7 @@ impl Ty {
             }
             TyKind::TypeVar(_) | TyKind::Never | TyKind::TraitType(_, _) => true,
             TyKind::Literal(_)
+            | TyKind::PtrMetadata(_)
             | TyKind::Ref(_, _, _)
             | TyKind::RawPtr(_, _)
             | TyKind::DynTrait(_)
@@ -1218,13 +1220,7 @@ impl<'a> SubstVisitor<'a> {
                     }
                 })
             }
-            DeBruijnVar::Free(varid) => {
-                if self.subst_frees {
-                    Some(get(varid).clone())
-                } else {
-                    None
-                }
-            }
+            DeBruijnVar::Free(_) => None,
         }
     }
 }
@@ -1542,16 +1538,6 @@ impl TypeDecl {
     pub fn is_transparent(&self) -> bool {
         self.repr.as_ref().is_some_and(|repr| repr.transparent)
     }
-
-    /// Looks up whether the representation annotations of the type
-    /// decl force the type's alignment to be related to a specified number.
-    pub fn forced_alignment(&self) -> Option<AlignRepr> {
-        self.repr.as_ref().and_then(|repr| {
-            repr.pack
-                .map(AlignRepr::Packed)
-                .or(repr.align.map(AlignRepr::Align))
-        })
-    }
 }
 
 impl Layout {
@@ -1572,12 +1558,11 @@ impl Layout {
             align: Some(size),
             discriminant_layout: None,
             uninhabited: false,
-            variant_layouts: [VariantLayout {
-                field_offsets: [].into(),
+            variant_layouts: IndexVec::from_array([VariantLayout {
+                field_offsets: IndexVec::from_array([]),
                 uninhabited: false,
                 tag: None,
-            }]
-            .into(),
+            }]),
         }
     }
 
@@ -1593,12 +1578,11 @@ impl Layout {
             align: Some(1),
             discriminant_layout: None,
             uninhabited: false,
-            variant_layouts: [VariantLayout {
-                field_offsets: [].into(),
+            variant_layouts: IndexVec::from_array([VariantLayout {
+                field_offsets: IndexVec::from_array([]),
                 uninhabited: false,
                 tag: None,
-            }]
-            .into(),
+            }]),
         }
     }
 
@@ -1610,12 +1594,11 @@ impl Layout {
             align: None,
             discriminant_layout: None,
             uninhabited: false,
-            variant_layouts: [VariantLayout {
-                field_offsets: [].into(),
+            variant_layouts: IndexVec::from_array([VariantLayout {
+                field_offsets: IndexVec::from_array([]),
                 uninhabited: false,
                 tag: None,
-            }]
-            .into(),
+            }]),
         }
     }
 }
@@ -1641,16 +1624,6 @@ impl<T> DeBruijnVar<T> {
         match self {
             DeBruijnVar::Bound(_, var) | DeBruijnVar::Free(var) => var,
         }
-    }
-}
-
-impl ReprOptions {
-    /// Whether this representation options guarantee a fixed
-    /// field ordering for the type.
-    ///
-    /// Cf. `rustc_abi::ReprOptions::inhibit_struct_field_reordering`.
-    pub fn guarantees_fixed_field_order(&self) -> bool {
-        self.c || self.explicit_discr_type
     }
 }
 

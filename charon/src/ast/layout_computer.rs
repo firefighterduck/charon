@@ -6,10 +6,13 @@ use std::{
 use either::Either;
 use serde::Serialize;
 
-use crate::ast::{
-    AlignRepr, AttrInfo, BuiltinTy, ByteCount, ConstGeneric, ConstGenericVarId, Field, FieldId,
-    GenericParams, Layout, Span, TranslatedCrate, Ty, TyKind, TyVisitable, TypeDeclKind,
-    TypeDeclRef, TypeId, TypeVarId, VariantLayout, Vector,
+use crate::{
+    ast::{
+        AlignmentModifier, AttrInfo, BuiltinTy, ByteCount, ConstGeneric, ConstGenericVarId, Field,
+        FieldId, GenericParams, Layout, Span, TranslatedCrate, Ty, TyKind, TyVisitable,
+        TypeDeclKind, TypeDeclRef, TypeId, TypeVarId, VariantLayout,
+    },
+    ids::IndexVec,
 };
 
 type GenericCtx<'a> = Option<&'a GenericParams>;
@@ -97,10 +100,10 @@ impl<'a> LayoutComputer<'a> {
     /// Approximate a layout for a struct (or enum variant) based on the fields.
     fn compute_layout_from_fields(
         &mut self,
-        fields: &Vector<FieldId, Field>,
+        fields: &IndexVec<FieldId, Field>,
         generic_ctx: GenericCtx<'_>,
         is_transparent: bool,
-        align_repr: Option<AlignRepr>,
+        align_repr: Option<AlignmentModifier>,
         is_variant: bool,
     ) -> Option<Either<&'a Layout, LayoutHint>> {
         let mut total_min_size = 0;
@@ -108,19 +111,18 @@ impl<'a> LayoutComputer<'a> {
         let mut uninhabited_part = false;
 
         // If it is a transparent new-type struct, we should be able to get a layout.
-        if fields.elem_count() == 1 && is_transparent {
+        if fields.len() == 1 && is_transparent {
             let field = fields.get(FieldId::ZERO).unwrap();
 
             match self.get_layout_of(&field.ty, generic_ctx) {
                 Some(Either::Left(l)) => {
                     // Simply exchange the field_offsets and variants.
                     let new_layout = Layout {
-                        variant_layouts: [VariantLayout {
-                            field_offsets: [0].into(),
+                        variant_layouts: IndexVec::from_array([VariantLayout {
+                            field_offsets: IndexVec::from_array([0]),
                             uninhabited: false,
                             tag: None,
-                        }]
-                        .into(),
+                        }]),
                         ..l.clone()
                     };
                     let layout_ref = Box::leak(Box::new(new_layout));
@@ -152,9 +154,9 @@ impl<'a> LayoutComputer<'a> {
             let min_alignment = match align_repr {
                 None => max_align,
                 // For `repr(align(n))`, the alignment is at least n.
-                Some(AlignRepr::Align(n)) => n,
+                Some(AlignmentModifier::Align(n)) => n,
                 // For `repr(packed(n))`, the alignment is at most n.
-                Some(AlignRepr::Packed(n)) => min(max_align, n),
+                Some(AlignmentModifier::Pack(n)) => min(max_align, n),
             };
 
             // For uninhabited variants, the size can be 0 (seemingly only for variants with a single uninhabited field).
@@ -176,7 +178,7 @@ impl<'a> LayoutComputer<'a> {
     /// Computes the layout based on the simple algorithm for C types.
     fn compute_c_layout_from_fields(
         &mut self,
-        fields: &Vector<FieldId, Field>,
+        fields: &IndexVec<FieldId, Field>,
         generic_ctx: GenericCtx<'_>,
     ) -> LayoutHint {
         let mut total_min_size = 0;
@@ -222,26 +224,26 @@ impl<'a> LayoutComputer<'a> {
         let type_decl_id = type_decl_ref.id.as_adt()?;
         let type_decl = self.krate.type_decls.get(*type_decl_id)?;
         // Substitute the generic arguments for the generic parameters.
-        let subst_kind = type_decl.kind.clone().substitute_frees(generics);
+        let subst_kind = type_decl.kind.clone().substitute(generics);
 
         match &subst_kind {
             TypeDeclKind::Struct(fields) => {
                 if type_decl.is_c_repr() {
                     Some(Either::Right(self.compute_c_layout_from_fields(fields, generic_ctx)))
                 } else {
-                    self.compute_layout_from_fields(fields, generic_ctx, type_decl.is_transparent(), type_decl.forced_alignment(), false)
+                    self.compute_layout_from_fields(fields, generic_ctx, type_decl.is_transparent(), type_decl.repr.as_ref().and_then(|r| r.align_modif.clone()), false)
                 }
             }
             TypeDeclKind::Enum(variants) => {
                 // Assume that there could be a niche and ignore the discriminant for the hint.
                 let variant_layouts: Vec<Option<Either<&'a Layout, LayoutHint>>> = variants.iter().map(|variant|
-                    self.compute_layout_from_fields(&variant.fields, generic_ctx, false,type_decl.forced_alignment(), true)
+                    self.compute_layout_from_fields(&variant.fields, generic_ctx, false,type_decl.repr.as_ref().and_then(|r| r.align_modif.clone()), true)
                 ).collect();
                 // If all variants have at least a layout hint, combine them.
                 if variant_layouts.iter().all(|l| l.is_some()) {
                     let mut max_variant_size = 0;
                     let mut max_variant_align = 1;
-                    let mut all_variants_uninhabited = variants.elem_count() == 0;
+                    let mut all_variants_uninhabited = variants.len() == 0;
                     for variant_layout in variant_layouts {
                         match variant_layout {
                             Some(Either::Left(l)) => {
@@ -330,12 +332,11 @@ impl<'a> LayoutComputer<'a> {
                     let array_layout = Layout {
                         size: l.size.map(|s| s * elem_num),
                         discriminant_layout: None,
-                        variant_layouts: [VariantLayout {
-                            field_offsets: [].into(),
+                        variant_layouts: IndexVec::from_array([VariantLayout {
+                            field_offsets: IndexVec::from_array([]),
                             uninhabited: false,
                             tag: None,
-                        }]
-                        .into(),
+                        }]),
                         ..l.clone()
                     };
                     let layout_ref = Box::leak(Box::new(array_layout));
@@ -414,7 +415,7 @@ impl<'a> LayoutComputer<'a> {
                                     Some(self.get_layout_of_ptr_type(boxed_ty, generic_ctx))
                                 } else {
                                     // Otherwise, it needs to be handled as if it was a struct with two fields (the allocator might be a ZST).
-                                    let pseudo_fields = [
+                                    let pseudo_fields = IndexVec::from_array([
                                         Field {
                                             span: Span::dummy(),
                                             attr_info: AttrInfo::default(),
@@ -427,8 +428,7 @@ impl<'a> LayoutComputer<'a> {
                                             name: None,
                                             ty: allocator_ty.clone(),
                                         },
-                                    ]
-                                    .into();
+                                    ]);
                                     self.compute_layout_from_fields(
                                         &pseudo_fields,
                                         generic_ctx,

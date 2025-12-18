@@ -481,24 +481,6 @@ pub struct ReprOptions {
     pub explicit_discr_type: bool,
 }
 
-/// The representation options as annotated by the user.
-///
-/// If all are false/None, then this is equivalent to `#[repr(Rust)]`.
-/// Some combinations are ruled out by the compiler, e.g. align and pack.
-///
-/// NOTE: This does not include less common/unstable representations such as `#[repr(simd)]`
-/// or the compiler internal `#[repr(linear)]`. Similarly, enum discriminant representations
-/// are encoded in [`Variant::discriminant`] and [`DiscriminantLayout`] instead.
-/// This only stores whether the discriminant type was derived from an explicit annotation.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ReprOptions {
-    pub align: Option<ByteCount>,
-    pub pack: Option<ByteCount>,
-    pub c: bool,
-    pub transparent: bool,
-    pub explicit_discr_type: bool,
-}
-
 /// A type declaration.
 ///
 /// Types can be opaque or transparent.

@@ -644,20 +644,17 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
         def_span: Span,
         item_meta: &ItemMeta,
         def: &hax::FullDef,
-    ) -> Result<(TypeDeclKind, Option<ReprOptions>), Error> {
+    ) -> Result<TypeDeclKind, Error> {
         use hax::AdtKind;
         let hax::FullDefKind::Adt {
-            adt_kind,
-            variants,
-            repr,
-            ..
+            adt_kind, variants, ..
         } = def.kind()
         else {
             unreachable!()
         };
 
         if item_meta.opacity.is_opaque() {
-            return Ok((TypeDeclKind::Opaque, None));
+            return Ok(TypeDeclKind::Opaque);
         }
 
         trace!("{}", trans_id);
@@ -685,7 +682,7 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
             .with_content_visibility(contents_are_public)
             .is_opaque()
         {
-            return Ok((TypeDeclKind::Opaque, None));
+            return Ok(TypeDeclKind::Opaque);
         }
 
         // The type is transparent: explore the variants
@@ -779,9 +776,8 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
             // The rest are fake adt kinds that won't reach here.
             _ => unreachable!(),
         };
-        let repr = Self::translate_repr_options(repr);
 
-        Ok((type_def_kind, Some(repr)))
+        Ok(type_def_kind)
     }
 
     fn translate_discriminant(
@@ -817,16 +813,6 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
             explicit_discr_type: hax_repr_options.int_specified,
             repr_algo,
             align_modif: align_mod,
-        }
-    }
-
-    pub fn translate_repr_options(hax_repr: &hax::ReprOptions) -> ReprOptions {
-        ReprOptions {
-            align: hax_repr.align.clone().map(|a| a.bytes),
-            pack: hax_repr.pack.clone().map(|a| a.bytes),
-            c: hax_repr.flags.is_c,
-            transparent: hax_repr.flags.is_transparent,
-            explicit_discr_type: hax_repr.int_specified,
         }
     }
 }
