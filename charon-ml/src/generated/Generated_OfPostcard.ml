@@ -26,7 +26,8 @@ module FileTbl = Hashtbl.Make (struct
   let hash = Hashtbl.hash
 end)
 
-(** Table of the values that were deduplicated in the serialized output, by id. *)
+(** Table of the values that were deduplicated in the serialized output, by id.
+*)
 module DedupTbl = Hashtbl.Make (struct
   type t = DedupId.id
 
@@ -40,6 +41,7 @@ type of_postcard_ctx = {
   tref_dedup_tbl : trait_ref DedupTbl.t;
   constant_expr_dedup_tbl : constant_expr DedupTbl.t;
   exact_size_expr_dedup_tbl : exact_size_expr DedupTbl.t;
+  span_dedup_tbl : span DedupTbl.t;
 }
 
 let empty_of_postcard_ctx : of_postcard_ctx =
@@ -49,11 +51,12 @@ let empty_of_postcard_ctx : of_postcard_ctx =
     tref_dedup_tbl = DedupTbl.create 1024;
     constant_expr_dedup_tbl = DedupTbl.create 1024;
     exact_size_expr_dedup_tbl = DedupTbl.create 1024;
+    span_dedup_tbl = DedupTbl.create 4096;
   }
 
 (** Values that come up often are deduplicated in the serialized output: the
-    first occurrence of a value is serialized in full along with an id, and later
-    occurrences only mention that id. *)
+    first occurrence of a value is serialized in full along with an id, and
+    later occurrences only mention that id. *)
 let dedup_val_of_postcard (tbl : 'a DedupTbl.t)
     (of_postcard : of_postcard_ctx -> postcard_state -> ('a, string) result)
     (ctx : of_postcard_ctx) (st : postcard_state) : ('a, string) result =
@@ -72,8 +75,8 @@ let dedup_val_of_postcard (tbl : 'a DedupTbl.t)
            | Some v -> Ok v
            | None ->
                Error
-                 "Deduplication key not found; there is a serialization mismatch \
-                  between Rust and OCaml"
+                 "Deduplication key not found; there is a serialization \
+                  mismatch between Rust and OCaml"
          end
      | 2 -> of_postcard ctx st
      | _ -> Error "invalid deduplicated value representation")
@@ -1158,11 +1161,14 @@ and scalar_value_of_postcard (ctx : of_postcard_ctx) (st : postcard_state) :
 and span_of_postcard (ctx : of_postcard_ctx) (st : postcard_state) :
     (span, string) result =
   combine_error_msgs st __FUNCTION__
-    (let* data = span_data_of_postcard ctx st in
-     let* generated_from_span =
-       option_of_postcard span_data_of_postcard ctx st
-     in
-     Ok ({ data; generated_from_span } : span))
+    (dedup_val_of_postcard ctx.span_dedup_tbl
+       (fun ctx st ->
+         let* data = span_data_of_postcard ctx st in
+         let* generated_from_span =
+           option_of_postcard span_data_of_postcard ctx st
+         in
+         Ok ({ data; generated_from_span } : span))
+       ctx st)
 
 and span_data_of_postcard (ctx : of_postcard_ctx) (st : postcard_state) :
     (span_data, string) result =
@@ -1249,8 +1255,8 @@ and trait_param_of_postcard (ctx : of_postcard_ctx) (st : postcard_state) :
 and trait_ref_of_postcard (ctx : of_postcard_ctx) (st : postcard_state) :
     (trait_ref, string) result =
   combine_error_msgs st __FUNCTION__
-    (dedup_val_of_postcard ctx.tref_dedup_tbl
-       trait_ref_contents_of_postcard ctx st)
+    (dedup_val_of_postcard ctx.tref_dedup_tbl trait_ref_contents_of_postcard ctx
+       st)
 
 and trait_ref_contents_of_postcard (ctx : of_postcard_ctx) (st : postcard_state)
     : (trait_ref_contents, string) result =

@@ -30,7 +30,8 @@ module FileTbl = Hashtbl.Make (struct
   let hash = Hashtbl.hash
 end)
 
-(** Table of the values that were deduplicated in the serialized output, by id. *)
+(** Table of the values that were deduplicated in the serialized output, by id.
+*)
 module DedupTbl = Hashtbl.Make (struct
   type t = DedupId.id
 
@@ -44,6 +45,7 @@ type of_json_ctx = {
   tref_dedup_tbl : trait_ref DedupTbl.t;
   constant_expr_dedup_tbl : constant_expr DedupTbl.t;
   exact_size_expr_dedup_tbl : exact_size_expr DedupTbl.t;
+  span_dedup_tbl : span DedupTbl.t;
 }
 
 let empty_of_json_ctx : of_json_ctx =
@@ -53,11 +55,12 @@ let empty_of_json_ctx : of_json_ctx =
     tref_dedup_tbl = DedupTbl.create 1024;
     constant_expr_dedup_tbl = DedupTbl.create 1024;
     exact_size_expr_dedup_tbl = DedupTbl.create 1024;
+    span_dedup_tbl = DedupTbl.create 4096;
   }
 
 (** Values that come up often are deduplicated in the serialized output: the
-    first occurrence of a value is serialized in full along with an id, and later
-    occurrences only mention that id. *)
+    first occurrence of a value is serialized in full along with an id, and
+    later occurrences only mention that id. *)
 let dedup_val_of_json (tbl : 'a DedupTbl.t)
     (of_json : of_json_ctx -> json -> ('a, string) result) (ctx : of_json_ctx)
     (js : json) : ('a, string) result =
@@ -1257,12 +1260,20 @@ and scalar_value_of_json (ctx : of_json_ctx) (js : json) :
 and span_of_json (ctx : of_json_ctx) (js : json) : (span, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with
-    | `Assoc [ ("data", data); ("generated_from_span", generated_from_span) ] ->
-        let* data = span_data_of_json ctx data in
-        let* generated_from_span =
-          option_of_json span_data_of_json ctx generated_from_span
-        in
-        Ok ({ data; generated_from_span } : span)
+    | json ->
+        dedup_val_of_json ctx.span_dedup_tbl
+          (fun ctx json ->
+            match json with
+            | `Assoc
+                [ ("data", data); ("generated_from_span", generated_from_span) ]
+              ->
+                let* data = span_data_of_json ctx data in
+                let* generated_from_span =
+                  option_of_json span_data_of_json ctx generated_from_span
+                in
+                Ok ({ data; generated_from_span } : span)
+            | _ -> Error "")
+          ctx json
     | _ -> Error "")
 
 and span_data_of_json (ctx : of_json_ctx) (js : json) :
@@ -1392,8 +1403,7 @@ and trait_ref_of_json (ctx : of_json_ctx) (js : json) :
   combine_error_msgs js __FUNCTION__
     (match js with
     | json ->
-        dedup_val_of_json ctx.tref_dedup_tbl trait_ref_contents_of_json
-          ctx json
+        dedup_val_of_json ctx.tref_dedup_tbl trait_ref_contents_of_json ctx json
     | _ -> Error "")
 
 and trait_ref_contents_of_json (ctx : of_json_ctx) (js : json) :
@@ -1480,8 +1490,7 @@ and trait_type_constraint_id_of_json (ctx : of_json_ctx) (js : json) :
 and ty_of_json (ctx : of_json_ctx) (js : json) : (ty, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with
-    | json ->
-        dedup_val_of_json ctx.ty_dedup_tbl ty_kind_of_json ctx json
+    | json -> dedup_val_of_json ctx.ty_dedup_tbl ty_kind_of_json ctx json
     | _ -> Error "")
 
 and ty_kind_of_json (ctx : of_json_ctx) (js : json) : (ty_kind, string) result =
