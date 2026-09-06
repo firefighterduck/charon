@@ -416,7 +416,10 @@ in
           signal.signal(signal.SIGTERM, request_shutdown)
           logging.info("waiting for Zulip messages as %s", profile["full_name"])
           client.call_on_each_event(
-              handle_event, event_types=["message", "update_message"]
+              handle_event,
+              event_types=["message", "update_message"],
+              # `max_message_length` is part of the initial `realm` data.
+              fetch_event_types=["realm"],
           )
       except ShutdownRequested:
           logging.info("shutdown requested; all active work is complete")
