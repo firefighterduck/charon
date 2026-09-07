@@ -5,6 +5,15 @@
 #[lang_item(MetaSized)]
 pub trait MetaSized<Self>
 
+// Full name: core::marker::Sized
+#[fundamental]
+#[lang_item(Sized)]
+pub trait Sized<Self>
+{
+    proof ImpliedClause0: (Self: MetaSized)
+    non-dyn-compatible
+}
+
 // Full name: alloc::string::String
 #[lang_item(String)]
 pub opaque type String
@@ -58,7 +67,7 @@ fn BAR() -> &'static [u8]
     _4 = &_3
     _2 = move _4
     _1 = &(*_2)
-    _0 = @ArrayToSliceShared<'_, u8, 5usize>(move _1)
+    _0 = @ArrayToSliceShared<'_, u8, 5usize>[{built_in impl Sized for u8}](move _1)
     ↳⚡ undefined_behavior
     storage_dead(_2)
     storage_dead(_1)

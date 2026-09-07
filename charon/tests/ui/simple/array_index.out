@@ -1,5 +1,19 @@
 # Final LLBC before serialization:
 
+// Full name: core::marker::MetaSized
+#[fundamental]
+#[lang_item(MetaSized)]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[fundamental]
+#[lang_item(Sized)]
+pub trait Sized<Self>
+{
+    proof ImpliedClause0: (Self: MetaSized)
+    non-dyn-compatible
+}
+
 // Full name: test_crate::first
 pub fn first(s: [u32; 0usize]) -> u32
 {
@@ -16,7 +30,7 @@ pub fn first(s: [u32; 0usize]) -> u32
     storage_live(_3)
     _3 = &s
     storage_live(_4)
-    _4 = @ArrayIndexShared<'_, u32, 0usize>(move _3, copy _2)
+    _4 = @ArrayIndexShared<'_, u32, 0usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     _0 = copy (*_4)
     storage_dead(_2)

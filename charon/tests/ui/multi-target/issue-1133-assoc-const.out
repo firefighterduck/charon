@@ -1,3 +1,15 @@
+#[fundamental]
+#[lang_item(MetaSized)]
+pub trait core::marker::MetaSized<Self>
+
+#[fundamental]
+#[lang_item(Sized)]
+pub trait core::marker::Sized<Self>
+{
+    proof ImpliedClause0: (Self: core::marker::MetaSized)
+    non-dyn-compatible
+}
+
 pub struct test_crate::Foo::x86_64-pc-windows-msvc {
   x: u64,
 }
@@ -35,7 +47,7 @@ pub fn test_crate::{test_crate::Foo::x86_64-pc-windows-msvc}::uses_const::x86_64
     storage_live(_4)
     _4 = &_2
     storage_live(_5)
-    _5 = @ArrayIndexShared<'_, u32, 4usize>(move _4, copy _3)
+    _5 = @ArrayIndexShared<'_, u32, 4usize>[{built_in impl core::marker::Sized for u32}](move _4, copy _3)
     ↳⚡ undefined_behavior
     _0 = copy (*_5)
     storage_dead(_3)
@@ -75,7 +87,7 @@ pub fn test_crate::{test_crate::Foo::i686-unknown-linux-gnu}::uses_const::i686-u
     storage_live(_4)
     _4 = &_2
     storage_live(_5)
-    _5 = @ArrayIndexShared<'_, u32, 4usize>(move _4, copy _3)
+    _5 = @ArrayIndexShared<'_, u32, 4usize>[{built_in impl core::marker::Sized for u32}](move _4, copy _3)
     ↳⚡ undefined_behavior
     _0 = copy (*_5)
     storage_dead(_3)

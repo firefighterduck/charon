@@ -228,11 +228,6 @@ pub enum BuiltinFunId {
     /// - `fn SliceSubSliceMut<T>(&mut [T], usize, usize) -> &mut [T]`
     /// - etc
     Index(BuiltinIndexOp),
-    /// Build a raw pointer, from a data pointer and metadata. The metadata can be unit, if
-    /// building a thin pointer.
-    ///
-    /// This is used instead of `AggregateKind::RawPtr` when `--ops-to-function-calls` is set.
-    PtrFromParts(RefKind),
 }
 
 /// One of 8 built-in indexing operations.

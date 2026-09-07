@@ -572,7 +572,7 @@ and match_expr_with_ty (ctx : ctx) (c : match_config) (m : maps) (pty : expr)
   | EComp pid, TLiteral lit -> match_pattern_with_literal_type pid lit
   | EPrimAdt (pid, pgenerics), ty -> begin
       match (pid, ty) with
-      | TArray, TArray (ty, len) ->
+      | TArray, TArray (ty, len, _) ->
           let generics : T.generic_args =
             {
               types = [ ty ];
@@ -582,7 +582,7 @@ and match_expr_with_ty (ctx : ctx) (c : match_config) (m : maps) (pty : expr)
             }
           in
           match_generic_args ctx c m pgenerics generics
-      | TSlice, TSlice ty ->
+      | TSlice, TSlice (ty, _) ->
           let generics : T.generic_args =
             {
               types = [ ty ];
@@ -725,9 +725,6 @@ let builtin_fun_id_to_string (fid : T.builtin_fun_id) : string =
       let op = if is_range then "SubSlice" else "Index" in
       let mutability = Print.ref_kind_to_string mutability in
       ty ^ op ^ mutability
-  | PtrFromParts mut ->
-      let mut = if mut = RMut then "_mut" else "" in
-      "std::ptr::from_raw_parts" ^ mut
 
 let match_fn_ptr (ctx : ctx) (c : match_config) (p : pattern) (func : T.fn_ptr)
     : bool =
@@ -1051,7 +1048,7 @@ and ty_to_pattern_aux (ctx : ctx) (c : to_pat_config) (m : constraints)
       EArrow (inputs, output)
   | TRawPtr (ty, RMut) -> ERawPtr (Mut, ty_to_pattern_aux ctx c m ty)
   | TRawPtr (ty, RShared) -> ERawPtr (Not, ty_to_pattern_aux ctx c m ty)
-  | TArray (ty, len) ->
+  | TArray (ty, len, _) ->
       let generics =
         generic_args_to_pattern ctx c m
           {
@@ -1062,7 +1059,7 @@ and ty_to_pattern_aux (ctx : ctx) (c : to_pat_config) (m : constraints)
           }
       in
       EPrimAdt (TArray, generics)
-  | TSlice ty ->
+  | TSlice (ty, _) ->
       let generics =
         generic_args_to_pattern ctx c m
           { types = [ ty ]; const_generics = []; regions = []; trait_refs = [] }

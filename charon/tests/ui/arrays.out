@@ -60,6 +60,44 @@ where
     TypeOutlives2: I: '_0,
 = <opaque>
 
+// Full name: core::clone::Clone
+#[lang_item(Clone)]
+#[diagnostic_item("Clone")]
+pub trait Clone<Self>
+{
+    proof ImpliedClause0: (Self: Sized)
+    fn clone<'_0_1>;
+    non-dyn-compatible
+}
+
+// Full name: core::clone::impls::{impl Clone for u32}::clone
+pub fn clone<'_0>(_1: &'_0 u32) -> u32
+= <opaque>
+
+// Full name: core::clone::impls::{impl Clone for u32}
+impl "impl_Clone_for_u32" Clone for u32 {
+    proof ImpliedClause0: (u32: Sized) = {built_in impl Sized for u32}
+    fn clone<'_0_1> = clone<'_0_1>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Copy
+#[lang_item(Copy)]
+#[diagnostic_item("Copy")]
+pub trait Copy<Self>
+{
+    proof ImpliedClause0: (Self: MetaSized)
+    proof ImpliedClause1: (Self: Clone)
+    non-dyn-compatible
+}
+
+// Full name: core::marker::{impl Copy for u32}
+impl "impl_Copy_for_u32" Copy for u32 {
+    proof ImpliedClause0: (u32: MetaSized) = {built_in impl MetaSized for u32}
+    proof ImpliedClause1: (u32: Clone) = impl_Clone_for_u32
+    non-dyn-compatible
+}
+
 struct () {}
 
 // Full name: core::marker::Destruct
@@ -290,7 +328,7 @@ where
             storage_live(_10)
             _10 = &mut (*_1) with_metadata(copy _1.metadata)
             storage_live(_11)
-            _11 = @SliceIndexMut<'_, T>(move _10, copy _3)
+            _11 = @SliceIndexMut<'_, T>[TraitClause0](move _10, copy _3)
             ↳⚡ undefined_behavior
             _6 = &raw mut (*_11)
             _3 = move _3 wrap.+ const 1usize
@@ -303,7 +341,7 @@ where
                         storage_live(_8)
                         _8 = &mut (*_1) with_metadata(copy _1.metadata)
                         storage_live(_9)
-                        _9 = @SliceIndexMut<'_, T>(move _8, copy _3)
+                        _9 = @SliceIndexMut<'_, T>[TraitClause0](move _8, copy _3)
                         ↳⚡ undefined_behavior
                         _4 = &raw mut (*_9)
                         _3 = move _3 wrap.+ const 1usize
@@ -370,7 +408,7 @@ where
     storage_live(_0)
     storage_live(_2)
     _0 = ()
-    _2 = @ArrayToSliceMut<'_, T, N>(move _1)
+    _2 = @ArrayToSliceMut<'_, T, N>[TraitClause0](move _1)
     ↳⚡ undefined_behavior
     _0 = drop_glue<'6, [T]>[impl_Destruct_for_slice<T>[TraitClause0]](move _2)
     ↳⚡ storage_dead(_2)
@@ -427,7 +465,7 @@ where
     storage_live(_0)
     storage_live(_2)
     _2 = &(*s)
-    _0 = @ArrayToSliceShared<'_, T, 32usize>(move _2)
+    _0 = @ArrayToSliceShared<'_, T, 32usize>[TraitClause0](move _2)
     ↳⚡ undefined_behavior
     storage_dead(_2)
     storage_dead(s)
@@ -449,7 +487,7 @@ where
     storage_live(_2)
     storage_live(_3)
     _3 = &mut (*s)
-    _2 = @ArrayToSliceMut<'_, T, 32usize>(move _3)
+    _2 = @ArrayToSliceMut<'_, T, 32usize>[TraitClause0](move _3)
     ↳⚡ undefined_behavior
     storage_dead(_3)
     _0 = &mut (*_2) with_metadata(copy _2.metadata)
@@ -472,7 +510,7 @@ where
     storage_live(_2)
     storage_live(_3)
     _3 = &s
-    _2 = @ArrayToSliceShared<'_, T, 32usize>(move _3)
+    _2 = @ArrayToSliceShared<'_, T, 32usize>[TraitClause0](move _3)
     ↳⚡ undefined_behavior
     storage_dead(_3)
     _0 = len<'6, T>[TraitClause0](move _2)
@@ -504,7 +542,7 @@ where
     storage_live(_2)
     storage_live(_3)
     _3 = &(*s)
-    _2 = @ArrayToSliceShared<'_, T, 32usize>(move _3)
+    _2 = @ArrayToSliceShared<'_, T, 32usize>[TraitClause0](move _3)
     ↳⚡ undefined_behavior
     storage_dead(_3)
     _0 = len<'7, T>[TraitClause0](move _2)
@@ -558,7 +596,7 @@ where
     storage_live(_5)
     _5 = &(*s)
     storage_live(_6)
-    _6 = @ArrayIndexShared<'_, T, 32usize>(move _5, copy _4)
+    _6 = @ArrayIndexShared<'_, T, 32usize>[TraitClause0](move _5, copy _4)
     ↳⚡ undefined_behavior
     _3 = &(*_6)
     _0 = &(*_3)
@@ -588,7 +626,7 @@ pub fn index_array_u32(s: [u32; 32usize], i: usize) -> u32
     storage_live(_4)
     _4 = &s
     storage_live(_5)
-    _5 = @ArrayIndexShared<'_, u32, 32usize>(move _4, copy _3)
+    _5 = @ArrayIndexShared<'_, u32, 32usize>[{built_in impl Sized for u32}](move _4, copy _3)
     ↳⚡ undefined_behavior
     _0 = copy (*_5)
     storage_dead(_3)
@@ -615,7 +653,7 @@ pub fn index_array_copy<'_0>(x: &'_0 [u32; 32usize]) -> u32
     storage_live(_3)
     _3 = &(*x)
     storage_live(_4)
-    _4 = @ArrayIndexShared<'_, u32, 32usize>(move _3, copy _2)
+    _4 = @ArrayIndexShared<'_, u32, 32usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     _0 = copy (*_4)
     storage_dead(_2)
@@ -649,7 +687,7 @@ where
     storage_live(_6)
     _6 = &mut (*s)
     storage_live(_7)
-    _7 = @ArrayIndexMut<'_, T, 32usize>(move _6, copy _5)
+    _7 = @ArrayIndexMut<'_, T, 32usize>[TraitClause0](move _6, copy _5)
     ↳⚡ undefined_behavior
     _4 = &mut (*_7)
     _3 = &mut (*_4)
@@ -685,7 +723,7 @@ where
     storage_live(_5)
     _5 = &(*s) with_metadata(copy s.metadata)
     storage_live(_6)
-    _6 = @SliceIndexShared<'_, T>(move _5, copy _4)
+    _6 = @SliceIndexShared<'_, T>[TraitClause0](move _5, copy _4)
     ↳⚡ undefined_behavior
     _3 = &(*_6)
     _0 = &(*_3)
@@ -721,7 +759,7 @@ where
     storage_live(_6)
     _6 = &mut (*s) with_metadata(copy s.metadata)
     storage_live(_7)
-    _7 = @SliceIndexMut<'_, T>(move _6, copy _5)
+    _7 = @SliceIndexMut<'_, T>[TraitClause0](move _6, copy _5)
     ↳⚡ undefined_behavior
     _4 = &mut (*_7)
     _3 = &mut (*_4)
@@ -838,7 +876,7 @@ pub fn array_to_slice_shared_<'_0>(x: &'_0 [u32; 32usize]) -> &'_0 [u32]
     storage_live(_0)
     storage_live(_2)
     _2 = &(*x)
-    _0 = @ArrayToSliceShared<'_, u32, 32usize>(move _2)
+    _0 = @ArrayToSliceShared<'_, u32, 32usize>[{built_in impl Sized for u32}](move _2)
     ↳⚡ undefined_behavior
     storage_dead(_2)
     storage_dead(x)
@@ -857,7 +895,7 @@ pub fn array_to_slice_mut_<'_0>(x: &'_0 mut [u32; 32usize]) -> &'_0 mut [u32]
     storage_live(_2)
     storage_live(_3)
     _3 = &mut (*x)
-    _2 = @ArrayToSliceMut<'_, u32, 32usize>(move _3)
+    _2 = @ArrayToSliceMut<'_, u32, 32usize>[{built_in impl Sized for u32}](move _3)
     ↳⚡ undefined_behavior
     storage_dead(_3)
     _0 = &mut (*_2) with_metadata(copy _2.metadata)
@@ -978,7 +1016,7 @@ where
     storage_live(_4)
     _4 = &(*s) with_metadata(copy s.metadata)
     storage_live(_5)
-    _5 = @SliceIndexShared<'_, T>(move _4, copy _3)
+    _5 = @SliceIndexShared<'_, T>[TraitClause0](move _4, copy _3)
     ↳⚡ undefined_behavior
     _2 = &(*_5)
     _0 = &(*_2)
@@ -1011,7 +1049,7 @@ where
     storage_live(_4)
     _4 = &(*s)
     storage_live(_5)
-    _5 = @ArrayIndexShared<'_, T, 32usize>(move _4, copy _3)
+    _5 = @ArrayIndexShared<'_, T, 32usize>[TraitClause0](move _4, copy _3)
     ↳⚡ undefined_behavior
     _2 = &(*_5)
     _0 = &(*_2)
@@ -1048,18 +1086,18 @@ pub fn index_index_array(s: [[u32; 32usize]; 32usize], i: usize, j: usize) -> u3
     storage_live(_6)
     _6 = &s
     storage_live(_7)
-    _7 = @ArrayIndexShared<'_, [u32; 32usize], 32usize>(move _6, copy _4)
+    _7 = @ArrayIndexShared<'_, [u32; 32usize], 32usize>[{built_in impl Sized for [u32; 32usize]}](move _6, copy _4)
     ↳⚡ undefined_behavior
     fake_read((*_7))
     storage_live(_8)
     _8 = &s
     storage_live(_9)
-    _9 = @ArrayIndexShared<'_, [u32; 32usize], 32usize>(move _8, copy _4)
+    _9 = @ArrayIndexShared<'_, [u32; 32usize], 32usize>[{built_in impl Sized for [u32; 32usize]}](move _8, copy _4)
     ↳⚡ undefined_behavior
     storage_live(_10)
     _10 = &(*_9)
     storage_live(_11)
-    _11 = @ArrayIndexShared<'_, u32, 32usize>(move _10, copy _5)
+    _11 = @ArrayIndexShared<'_, u32, 32usize>[{built_in impl Sized for u32}](move _10, copy _5)
     ↳⚡ undefined_behavior
     _0 = copy (*_11)
     storage_dead(_5)
@@ -1102,18 +1140,18 @@ pub fn update_update_array(s: [[u32; 32usize]; 32usize], i: usize, j: usize)
     storage_live(_6)
     _6 = &s
     storage_live(_7)
-    _7 = @ArrayIndexShared<'_, [u32; 32usize], 32usize>(move _6, copy _4)
+    _7 = @ArrayIndexShared<'_, [u32; 32usize], 32usize>[{built_in impl Sized for [u32; 32usize]}](move _6, copy _4)
     ↳⚡ undefined_behavior
     fake_read((*_7))
     storage_live(_8)
     _8 = &mut s
     storage_live(_9)
-    _9 = @ArrayIndexMut<'_, [u32; 32usize], 32usize>(move _8, copy _4)
+    _9 = @ArrayIndexMut<'_, [u32; 32usize], 32usize>[{built_in impl Sized for [u32; 32usize]}](move _8, copy _4)
     ↳⚡ undefined_behavior
     storage_live(_10)
     _10 = &mut (*_9)
     storage_live(_11)
-    _11 = @ArrayIndexMut<'_, u32, 32usize>(move _10, copy _5)
+    _11 = @ArrayIndexMut<'_, u32, 32usize>[{built_in impl Sized for u32}](move _10, copy _5)
     ↳⚡ undefined_behavior
     (*_11) = const 0u32
     storage_dead(_5)
@@ -1152,13 +1190,13 @@ pub fn incr_array_self<'_0>(s: &'_0 mut [u32; 2usize])
     storage_live(_4)
     _4 = &(*s)
     storage_live(_5)
-    _5 = @ArrayIndexShared<'_, u32, 2usize>(move _4, copy _2)
+    _5 = @ArrayIndexShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _4, copy _2)
     ↳⚡ undefined_behavior
     _3 = copy (*_5) panic.+ const 1u32
     storage_live(_6)
     _6 = &mut (*s)
     storage_live(_7)
-    _7 = @ArrayIndexMut<'_, u32, 2usize>(move _6, copy _2)
+    _7 = @ArrayIndexMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _6, copy _2)
     ↳⚡ undefined_behavior
     (*_7) = move _3
     storage_dead(_2)
@@ -1192,13 +1230,13 @@ pub fn incr_slice_self<'_0>(s: &'_0 mut [u32])
     storage_live(_4)
     _4 = &(*s) with_metadata(copy s.metadata)
     storage_live(_5)
-    _5 = @SliceIndexShared<'_, u32>(move _4, copy _2)
+    _5 = @SliceIndexShared<'_, u32>[{built_in impl Sized for u32}](move _4, copy _2)
     ↳⚡ undefined_behavior
     _3 = copy (*_5) panic.+ const 1u32
     storage_live(_6)
     _6 = &mut (*s) with_metadata(copy s.metadata)
     storage_live(_7)
-    _7 = @SliceIndexMut<'_, u32>(move _6, copy _2)
+    _7 = @SliceIndexMut<'_, u32>[{built_in impl Sized for u32}](move _6, copy _2)
     ↳⚡ undefined_behavior
     (*_7) = move _3
     storage_dead(_2)
@@ -1288,7 +1326,7 @@ pub fn const_array() -> [u32; 2usize]
     let _0: [u32; 2usize]; // return
 
     storage_live(_0)
-    _0 = @ArrayRepeat<u32, 2usize>(const 0u32)
+    _0 = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     return
 }
@@ -1308,7 +1346,7 @@ pub fn const_slice()
     storage_live(_5)
     storage_live(_6)
     storage_live(_7)
-    _7 = @ArrayRepeat<u32, 2usize>(const 0u32)
+    _7 = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     _6 = &_7
     _5 = move _6
@@ -1321,7 +1359,7 @@ pub fn const_slice()
     _4 = move _5
     _3 = &(*_4)
     _2 = &(*_3)
-    _1 = @ArrayToSliceShared<'_, u32, 2usize>(move _2)
+    _1 = @ArrayToSliceShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _2)
     ↳⚡ undefined_behavior
     storage_dead(_2)
     set_type(typeof(_1) <= &'8 [u32])
@@ -1359,7 +1397,7 @@ pub fn take_all()
     storage_live(_0)
     _0 = ()
     storage_live(x)
-    x = @ArrayRepeat<u32, 2usize>(const 0u32)
+    x = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     fake_read(x)
     set_type(typeof(x) == [u32; 2usize])
@@ -1396,7 +1434,7 @@ pub fn take_all()
     // automatic cast from array to slice (spanning entire array)
     _12 = &x
     _11 = &(*_12)
-    _10 = @ArrayToSliceShared<'_, u32, 2usize>(move _11)
+    _10 = @ArrayToSliceShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _11)
     ↳⚡ undefined_behavior
     storage_dead(_11)
     _9 = take_slice<'16>(move _10)
@@ -1412,7 +1450,7 @@ pub fn take_all()
     // mut and non-mut cases
     _16 = &mut x
     _15 = &mut (*_16)
-    _14 = @ArrayToSliceMut<'_, u32, 2usize>(move _15)
+    _14 = @ArrayToSliceMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _15)
     ↳⚡ undefined_behavior
     storage_dead(_15)
     _13 = take_mut_slice<'19>(move _14)
@@ -1441,7 +1479,7 @@ pub fn index_array(x: [u32; 2usize]) -> u32
     storage_live(_3)
     _3 = &x
     storage_live(_4)
-    _4 = @ArrayIndexShared<'_, u32, 2usize>(move _3, copy _2)
+    _4 = @ArrayIndexShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     _0 = copy (*_4)
     storage_dead(_2)
@@ -1467,7 +1505,7 @@ pub fn index_array_borrow<'_0>(x: &'_0 [u32; 2usize]) -> u32
     storage_live(_3)
     _3 = &(*x)
     storage_live(_4)
-    _4 = @ArrayIndexShared<'_, u32, 2usize>(move _3, copy _2)
+    _4 = @ArrayIndexShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     _0 = copy (*_4)
     storage_dead(_2)
@@ -1492,7 +1530,7 @@ pub fn index_slice_u32_0<'_0>(x: &'_0 [u32]) -> u32
     storage_live(_3)
     _3 = &(*x) with_metadata(copy x.metadata)
     storage_live(_4)
-    _4 = @SliceIndexShared<'_, u32>(move _3, copy _2)
+    _4 = @SliceIndexShared<'_, u32>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     _0 = copy (*_4)
     storage_dead(_2)
@@ -1517,7 +1555,7 @@ pub fn index_mut_slice_u32_0<'_0>(x: &'_0 mut [u32]) -> u32
     storage_live(_3)
     _3 = &(*x) with_metadata(copy x.metadata)
     storage_live(_4)
-    _4 = @SliceIndexShared<'_, u32>(move _3, copy _2)
+    _4 = @SliceIndexShared<'_, u32>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     _0 = copy (*_4)
     storage_dead(_2)
@@ -1564,7 +1602,7 @@ pub fn index_all() -> u32
     storage_live(_21)
     storage_live(_26)
     storage_live(x)
-    x = @ArrayRepeat<u32, 2usize>(const 0u32)
+    x = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     fake_read(x)
     set_type(typeof(x) == [u32; 2usize])
@@ -1572,7 +1610,7 @@ pub fn index_all() -> u32
     _2 = const true
     if move _2 {
         storage_live(_y)
-        _y = @ArrayRepeat<u32, 2usize>(const 0u32)
+        _y = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
         ↳⚡ undefined_behavior
         fake_read(_y)
         set_type(typeof(_y) == [u32; 2usize])
@@ -1634,7 +1672,7 @@ pub fn index_all() -> u32
     storage_live(_20)
     _20 = &x
     _19 = &(*_20)
-    _18 = @ArrayToSliceShared<'_, u32, 2usize>(move _19)
+    _18 = @ArrayToSliceShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _19)
     ↳⚡ undefined_behavior
     storage_dead(_19)
     _17 = index_slice_u32_0<'16>(move _18)
@@ -1654,7 +1692,7 @@ pub fn index_all() -> u32
     storage_live(_25)
     _25 = &mut x
     _24 = &mut (*_25)
-    _23 = @ArrayToSliceMut<'_, u32, 2usize>(move _24)
+    _23 = @ArrayToSliceMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _24)
     ↳⚡ undefined_behavior
     storage_dead(_24)
     _22 = index_mut_slice_u32_0<'19>(move _23)
@@ -1696,7 +1734,7 @@ pub fn update_array(x: [u32; 2usize])
     storage_live(_3)
     _3 = &mut x
     storage_live(_4)
-    _4 = @ArrayIndexMut<'_, u32, 2usize>(move _3, copy _2)
+    _4 = @ArrayIndexMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     (*_4) = const 1u32
     _0 = ()
@@ -1724,7 +1762,7 @@ pub fn update_array_mut_borrow<'_0>(x: &'_0 mut [u32; 2usize])
     storage_live(_3)
     _3 = &mut (*x)
     storage_live(_4)
-    _4 = @ArrayIndexMut<'_, u32, 2usize>(move _3, copy _2)
+    _4 = @ArrayIndexMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     (*_4) = const 1u32
     _0 = ()
@@ -1751,7 +1789,7 @@ pub fn update_mut_slice<'_0>(x: &'_0 mut [u32])
     storage_live(_3)
     _3 = &mut (*x) with_metadata(copy x.metadata)
     storage_live(_4)
-    _4 = @SliceIndexMut<'_, u32>(move _3, copy _2)
+    _4 = @SliceIndexMut<'_, u32>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     (*_4) = const 1u32
     _0 = ()
@@ -1782,7 +1820,7 @@ pub fn update_all()
     storage_live(_0)
     _0 = ()
     storage_live(x)
-    x = @ArrayRepeat<u32, 2usize>(const 0u32)
+    x = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     fake_read(x)
     set_type(typeof(x) == [u32; 2usize])
@@ -1816,7 +1854,7 @@ pub fn update_all()
     storage_live(_12)
     _12 = &mut x
     _11 = &mut (*_12)
-    _10 = @ArrayToSliceMut<'_, u32, 2usize>(move _11)
+    _10 = @ArrayToSliceMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _11)
     ↳⚡ undefined_behavior
     storage_dead(_11)
     _9 = update_mut_slice<'11>(move _10)
@@ -1844,7 +1882,7 @@ pub fn range_all()
     storage_live(_0)
     _0 = ()
     storage_live(x)
-    x = @ArrayRepeat<u32, 4usize>(const 0u32)
+    x = @ArrayRepeat<u32, 4usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     fake_read(x)
     set_type(typeof(x) == [u32; 4usize])
@@ -1895,7 +1933,7 @@ pub fn deref_array_borrow<'_0>(x_1: &'_0 [u32; 2usize]) -> u32
     storage_live(_4)
     _4 = &x_2
     storage_live(_5)
-    _5 = @ArrayIndexShared<'_, u32, 2usize>(move _4, copy _3)
+    _5 = @ArrayIndexShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _4, copy _3)
     ↳⚡ undefined_behavior
     _0 = copy (*_5)
     storage_dead(x_2)
@@ -1927,7 +1965,7 @@ pub fn deref_array_mut_borrow<'_0>(x_1: &'_0 mut [u32; 2usize]) -> u32
     storage_live(_4)
     _4 = &x_2
     storage_live(_5)
-    _5 = @ArrayIndexShared<'_, u32, 2usize>(move _4, copy _3)
+    _5 = @ArrayIndexShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _4, copy _3)
     ↳⚡ undefined_behavior
     _0 = copy (*_5)
     storage_dead(x_2)
@@ -2042,7 +2080,7 @@ pub fn sum<'_0>(s: &'_0 [u32]) -> u32
         storage_live(_12)
         _12 = &(*s) with_metadata(copy s.metadata)
         storage_live(_13)
-        _13 = @SliceIndexShared<'_, u32>(move _12, copy _9)
+        _13 = @SliceIndexShared<'_, u32>[{built_in impl Sized for u32}](move _12, copy _9)
         ↳⚡ undefined_behavior
         _8 = copy (*_13)
         _10 = copy sum panic.+ copy _8
@@ -2166,7 +2204,7 @@ pub fn sum2<'_0, '_1>(s: &'_0 [u32], s2: &'_1 [u32]) -> u32
         storage_live(_22)
         _22 = &(*s) with_metadata(copy s.metadata)
         storage_live(_23)
-        _23 = @SliceIndexShared<'_, u32>(move _22, copy _16)
+        _23 = @SliceIndexShared<'_, u32>[{built_in impl Sized for u32}](move _22, copy _16)
         ↳⚡ undefined_behavior
         _15 = copy (*_23)
         storage_live(_17)
@@ -2175,7 +2213,7 @@ pub fn sum2<'_0, '_1>(s: &'_0 [u32], s2: &'_1 [u32]) -> u32
         storage_live(_24)
         _24 = &(*s2) with_metadata(copy s2.metadata)
         storage_live(_25)
-        _25 = @SliceIndexShared<'_, u32>(move _24, copy _18)
+        _25 = @SliceIndexShared<'_, u32>[{built_in impl Sized for u32}](move _24, copy _18)
         ↳⚡ undefined_behavior
         _17 = copy (*_25)
         _19 = copy _15 panic.+ copy _17
@@ -2231,7 +2269,7 @@ pub fn f0()
     _4 = [const 1u32, const 2u32]
     _3 = &mut _4
     _2 = &mut (*_3)
-    s = @ArrayToSliceMut<'_, u32, 2usize>(move _2)
+    s = @ArrayToSliceMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _2)
     ↳⚡ undefined_behavior
     storage_dead(_2)
     fake_read(s)
@@ -2242,7 +2280,7 @@ pub fn f0()
     storage_live(_6)
     _6 = &mut (*s) with_metadata(copy s.metadata)
     storage_live(_7)
-    _7 = @SliceIndexMut<'_, u32>(move _6, copy _5)
+    _7 = @SliceIndexMut<'_, u32>[{built_in impl Sized for u32}](move _6, copy _5)
     ↳⚡ undefined_behavior
     (*_7) = const 1u32
     storage_dead(_5)
@@ -2275,7 +2313,7 @@ pub fn f1()
     storage_live(_3)
     _3 = &mut s
     storage_live(_4)
-    _4 = @ArrayIndexMut<'_, u32, 2usize>(move _3, copy _2)
+    _4 = @ArrayIndexMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     (*_4) = const 1u32
     storage_dead(_2)
@@ -2375,7 +2413,7 @@ pub fn f3() -> u32
     storage_live(_13)
     _13 = &a
     storage_live(_14)
-    _14 = @ArrayIndexShared<'_, u32, 2usize>(move _13, copy _4)
+    _14 = @ArrayIndexShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _13, copy _4)
     ↳⚡ undefined_behavior
     _3 = copy (*_14)
     _2 = f2(move _3)
@@ -2384,7 +2422,7 @@ pub fn f3() -> u32
     storage_dead(_4)
     storage_dead(_2)
     storage_live(b)
-    b = @ArrayRepeat<u32, 32usize>(const 0u32)
+    b = @ArrayRepeat<u32, 32usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     fake_read(b)
     storage_live(_6)
@@ -2392,7 +2430,7 @@ pub fn f3() -> u32
     storage_live(_8)
     _8 = &a
     _7 = &(*_8)
-    _6 = @ArrayToSliceShared<'_, u32, 2usize>(move _7)
+    _6 = @ArrayToSliceShared<'_, u32, 2usize>[{built_in impl Sized for u32}](move _7)
     ↳⚡ undefined_behavior
     storage_dead(_7)
     storage_live(_9)
@@ -2448,7 +2486,7 @@ pub fn f5<'_0>(x: &'_0 [u32; 32usize]) -> u32
     storage_live(_3)
     _3 = &(*x)
     storage_live(_4)
-    _4 = @ArrayIndexShared<'_, u32, 32usize>(move _3, copy _2)
+    _4 = @ArrayIndexShared<'_, u32, 32usize>[{built_in impl Sized for u32}](move _3, copy _2)
     ↳⚡ undefined_behavior
     _0 = copy (*_4)
     storage_dead(_2)
@@ -2477,7 +2515,7 @@ pub fn ite()
     storage_live(_0)
     _0 = ()
     storage_live(x)
-    x = @ArrayRepeat<u32, 2usize>(const 0u32)
+    x = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     fake_read(x)
     set_type(typeof(x) == [u32; 2usize])
@@ -2491,7 +2529,7 @@ pub fn ite()
         return
     }
     storage_live(y)
-    y = @ArrayRepeat<u32, 2usize>(const 0u32)
+    y = @ArrayRepeat<u32, 2usize>[impl_Copy_for_u32](const 0u32)
     ↳⚡ undefined_behavior
     fake_read(y)
     set_type(typeof(y) == [u32; 2usize])
@@ -2501,7 +2539,7 @@ pub fn ite()
     storage_live(_7)
     _7 = &mut x
     _6 = &mut (*_7)
-    _5 = @ArrayToSliceMut<'_, u32, 2usize>(move _6)
+    _5 = @ArrayToSliceMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _6)
     ↳⚡ undefined_behavior
     storage_dead(_6)
     _4 = index_mut_slice_u32_0<'10>(move _5)
@@ -2515,7 +2553,7 @@ pub fn ite()
     storage_live(_11)
     _11 = &mut y
     _10 = &mut (*_11)
-    _9 = @ArrayToSliceMut<'_, u32, 2usize>(move _10)
+    _9 = @ArrayToSliceMut<'_, u32, 2usize>[{built_in impl Sized for u32}](move _10)
     ↳⚡ undefined_behavior
     storage_dead(_10)
     _8 = index_mut_slice_u32_0<'13>(move _9)
@@ -2577,7 +2615,7 @@ pub fn zero_slice<'_0>(a: &'_0 mut [u8])
             storage_live(_10)
             _10 = &mut (*a) with_metadata(copy a.metadata)
             storage_live(_11)
-            _11 = @SliceIndexMut<'_, u8>(move _10, copy _8)
+            _11 = @SliceIndexMut<'_, u8>[{built_in impl Sized for u8}](move _10, copy _8)
             ↳⚡ undefined_behavior
             (*_11) = const 0u8
             storage_dead(_8)
@@ -2712,7 +2750,7 @@ pub fn sum_mut_slice<'_0>(a: &'_0 mut [u32]) -> u32
         storage_live(_12)
         _12 = &(*a) with_metadata(copy a.metadata)
         storage_live(_13)
-        _13 = @SliceIndexShared<'_, u32>(move _12, copy _9)
+        _13 = @SliceIndexShared<'_, u32>[{built_in impl Sized for u32}](move _12, copy _9)
         ↳⚡ undefined_behavior
         _8 = copy (*_13)
         _10 = copy s panic.+ copy _8
@@ -2753,7 +2791,7 @@ fn slice_pattern_1(x: [(); 1usize])
     storage_live(_3)
     _3 = &x
     storage_live(_4)
-    _4 = @ArrayIndexShared<'_, (), 1usize>(move _3, const 0usize)
+    _4 = @ArrayIndexShared<'_, (), 1usize>[{built_in impl Sized for ()}](move _3, const 0usize)
     ↳⚡ undefined_behavior
     _named = copy (*_4)
     _0 = ()
@@ -2771,16 +2809,16 @@ where
     TypeOutlives0: T: '_0,
 {
     let _0: (); // return
-    let x: [&'2 mut T; 3usize]; // arg #1
-    let _a: &'3 mut T; // local
-    let _b: &'4 mut T; // local
-    let _c: &'5 mut T; // local
-    let _5: &'_ mut [&'2 mut T; 3usize]; // anonymous local
-    let _6: &'_ mut &'2 mut T; // anonymous local
-    let _7: &'_ mut [&'2 mut T; 3usize]; // anonymous local
-    let _8: &'_ mut &'2 mut T; // anonymous local
-    let _9: &'_ mut [&'2 mut T; 3usize]; // anonymous local
-    let _10: &'_ mut &'2 mut T; // anonymous local
+    let x: [&'6 mut T; 3usize]; // arg #1
+    let _a: &'10 mut T; // local
+    let _b: &'11 mut T; // local
+    let _c: &'12 mut T; // local
+    let _5: &'_ mut [&'6 mut T; 3usize]; // anonymous local
+    let _6: &'_ mut &'6 mut T; // anonymous local
+    let _7: &'_ mut [&'6 mut T; 3usize]; // anonymous local
+    let _8: &'_ mut &'6 mut T; // anonymous local
+    let _9: &'_ mut [&'6 mut T; 3usize]; // anonymous local
+    let _10: &'_ mut &'6 mut T; // anonymous local
 
     storage_live(_0)
     _0 = ()
@@ -2788,21 +2826,21 @@ where
     storage_live(_5)
     _5 = &mut x
     storage_live(_6)
-    _6 = @ArrayIndexMut<'_, &'2 mut T, 3usize>(move _5, const 0usize)
+    _6 = @ArrayIndexMut<'_, &'6 mut T, 3usize>[{built_in impl Sized for &'9 mut T}](move _5, const 0usize)
     ↳⚡ undefined_behavior
     _a = move (*_6)
     storage_live(_b)
     storage_live(_7)
     _7 = &mut x
     storage_live(_8)
-    _8 = @ArrayIndexMut<'_, &'2 mut T, 3usize>(move _7, const 1usize)
+    _8 = @ArrayIndexMut<'_, &'6 mut T, 3usize>[{built_in impl Sized for &'9 mut T}](move _7, const 1usize)
     ↳⚡ undefined_behavior
     _b = move (*_8)
     storage_live(_c)
     storage_live(_9)
     _9 = &mut x
     storage_live(_10)
-    _10 = @ArrayIndexMut<'_, &'2 mut T, 3usize>(move _9, const 2usize)
+    _10 = @ArrayIndexMut<'_, &'6 mut T, 3usize>[{built_in impl Sized for &'9 mut T}](move _9, const 2usize)
     ↳⚡ undefined_behavior
     _c = move (*_10)
     _0 = ()
@@ -2834,7 +2872,7 @@ fn slice_pattern_3<'_0>(x: &'_0 [(); 1usize])
     storage_live(_3)
     _3 = &(*x)
     storage_live(_4)
-    _4 = @ArrayIndexShared<'_, (), 1usize>(move _3, const 0usize)
+    _4 = @ArrayIndexShared<'_, (), 1usize>[{built_in impl Sized for ()}](move _3, const 0usize)
     ↳⚡ undefined_behavior
     _named = &(*_4)
     _0 = ()
@@ -2884,7 +2922,7 @@ fn slice_pattern_4<'_0>(x: &'_0 [()])
     storage_live(_7)
     _7 = &(*x) with_metadata(copy x.metadata)
     storage_live(_8)
-    _8 = @SliceIndexShared<'_, ()>(move _7, const 0usize)
+    _8 = @SliceIndexShared<'_, ()>[{built_in impl Sized for ()}](move _7, const 0usize)
     ↳⚡ undefined_behavior
     _named = &(*_8)
     _0 = ()

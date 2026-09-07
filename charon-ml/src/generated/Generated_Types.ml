@@ -227,12 +227,6 @@ and builtin_fun_id =
           - [fn ArraySubSliceShared<T,N>(&[T;N], usize, usize) -> &[T]]
           - [fn SliceSubSliceMut<T>(&mut [T], usize, usize) -> &mut [T]]
           - etc *)
-  | PtrFromParts of ref_kind
-      (** Build a raw pointer, from a data pointer and metadata. The metadata
-          can be unit, if building a thin pointer.
-
-          This is used instead of [AggregateKind::RawPtr] when
-          [--ops-to-function-calls] is set. *)
 
 (** Describes a built-in impl. Mostly lists the implemented trait, sometimes
     with more details about the contents of the implementation. *)
@@ -757,8 +751,12 @@ and ty_kind =
   | TPtrMetadata of ty
       (** As a marker of taking out metadata from a given type The internal type
           is assumed to be a type variable *)
-  | TArray of ty * constant_expr  (** An array type [[T; N]] *)
-  | TSlice of ty  (** A slice type [[T]] *)
+  | TArray of ty * constant_expr * trait_ref option
+      (** An array type [[T; N]]. The third field is the proof that [T: Sized];
+          it is absent with [--hide-marker-traits]. *)
+  | TSlice of ty * trait_ref option
+      (** A slice type [[T]]. The second field is the proof that [T: Sized]; it
+          is absent with [--hide-marker-traits]. *)
   | TPattern of ty * type_pattern
       (** A pattern type. This is a newtype over the first type whose valid
           values are restricted by the pattern. *)

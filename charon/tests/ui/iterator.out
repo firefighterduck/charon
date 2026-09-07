@@ -5678,7 +5678,7 @@ fn main()
     storage_live(_15)
     storage_live(_16)
     _16 = &a
-    _15 = @ArrayToSliceShared<'_, i32, 7usize>(move _16)
+    _15 = @ArrayToSliceShared<'_, i32, 7usize>[{built_in impl Sized for i32}](move _16)
     ↳⚡ undefined_behavior
     storage_dead(_16)
     _14 = iter<'110, i32>[{built_in impl Sized for i32}](move _15)
@@ -5771,7 +5771,7 @@ fn main()
     storage_live(_27)
     storage_live(_28)
     _28 = &a
-    _27 = @ArrayToSliceShared<'_, i32, 7usize>(move _28)
+    _27 = @ArrayToSliceShared<'_, i32, 7usize>[{built_in impl Sized for i32}](move _28)
     ↳⚡ undefined_behavior
     storage_dead(_28)
     _26 = chunks<'135, i32>[{built_in impl Sized for i32}](move _27, const 2usize)
@@ -5843,7 +5843,7 @@ fn main()
     storage_live(_36)
     storage_live(_37)
     _37 = &a
-    _36 = @ArrayToSliceShared<'_, i32, 7usize>(move _37)
+    _36 = @ArrayToSliceShared<'_, i32, 7usize>[{built_in impl Sized for i32}](move _37)
     ↳⚡ undefined_behavior
     storage_dead(_37)
     _35 = chunks_exact<'152, i32>[{built_in impl Sized for i32}](move _36, const 2usize)
