@@ -58,23 +58,20 @@ const MANUAL_IMPLS: &[(&str, &str)] = &[
             "#
         ),
     ),
-    (
-        "HashConsed",
-        r#"Error "use `hash_consed_val_of_json` instead""#,
-    ), // Not actually used
+    ("HashConsed", r#"Error "use `dedup_val_of_json` instead""#), // Not actually used
     (
         "Ty",
-        "hash_consed_val_of_json ctx.ty_hashcons_map ty_kind_of_json ctx json",
+        "dedup_val_of_json ctx.ty_dedup_tbl ty_kind_of_json ctx json",
     ),
     (
         "TraitRef",
-        "hash_consed_val_of_json ctx.tref_hashcons_map trait_ref_contents_of_json ctx json",
+        "dedup_val_of_json ctx.tref_dedup_tbl trait_ref_contents_of_json ctx json",
     ),
     (
         "ConstantExpr",
         indoc!(
             r#"
-            hash_consed_val_of_json ctx.constant_expr_hashcons_map
+            dedup_val_of_json ctx.constant_expr_dedup_tbl
               (fun ctx json ->
                 let* contents = pair_of_json constant_expr_kind_of_json ty_of_json ctx json in
                 let kind, ty = contents in
@@ -85,7 +82,26 @@ const MANUAL_IMPLS: &[(&str, &str)] = &[
     ),
     (
         "ExactSizeExpr",
-        "hash_consed_val_of_json ctx.exact_size_expr_hashcons_map exact_size_expr_kind_of_json ctx json",
+        "dedup_val_of_json ctx.exact_size_expr_dedup_tbl exact_size_expr_kind_of_json ctx json",
+    ),
+    // Hand-written because spans are deduplicated in the serialized output.
+    (
+        "Span",
+        indoc!(
+            r#"
+            dedup_val_of_json ctx.span_dedup_tbl
+              (fun ctx json ->
+                match json with
+                | `Assoc [ ("data", data); ("generated_from_span", generated_from_span) ] ->
+                    let* data = span_data_of_json ctx data in
+                    let* generated_from_span =
+                      option_of_json span_data_of_json ctx generated_from_span
+                    in
+                    Ok ({ data; generated_from_span } : span)
+                | _ -> Error "")
+              ctx json
+            "#
+        ),
     ),
 ];
 

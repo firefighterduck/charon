@@ -18,7 +18,7 @@ open Generated_GAst
 open Generated_FullAst
 open Scalars
 module FileId = IdGen ()
-module HashConsId = IdGen ()
+module DedupId = IdGen ()
 
 (** The default logger *)
 let log = Logging.llbc_of_json_logger
@@ -30,41 +30,53 @@ module FileTbl = Hashtbl.Make (struct
   let hash = Hashtbl.hash
 end)
 
+(** Table of the values that were deduplicated in the serialized output, by id.
+*)
+module DedupTbl = Hashtbl.Make (struct
+  type t = DedupId.id
+
+  let equal = DedupId.equal_id
+  let hash = Hashtbl.hash
+end)
+
 type of_json_ctx = {
   id_to_file_map : file FileTbl.t;
-  ty_hashcons_map : ty HashConsId.Map.t ref;
-  tref_hashcons_map : trait_ref HashConsId.Map.t ref;
-  constant_expr_hashcons_map : constant_expr HashConsId.Map.t ref;
-  exact_size_expr_hashcons_map : exact_size_expr HashConsId.Map.t ref;
+  ty_dedup_tbl : ty DedupTbl.t;
+  tref_dedup_tbl : trait_ref DedupTbl.t;
+  constant_expr_dedup_tbl : constant_expr DedupTbl.t;
+  exact_size_expr_dedup_tbl : exact_size_expr DedupTbl.t;
+  span_dedup_tbl : span DedupTbl.t;
 }
 
 let empty_of_json_ctx : of_json_ctx =
   {
     id_to_file_map = FileTbl.create 8;
-    ty_hashcons_map = ref HashConsId.Map.empty;
-    tref_hashcons_map = ref HashConsId.Map.empty;
-    constant_expr_hashcons_map = ref HashConsId.Map.empty;
-    exact_size_expr_hashcons_map = ref HashConsId.Map.empty;
+    ty_dedup_tbl = DedupTbl.create 2048;
+    tref_dedup_tbl = DedupTbl.create 1024;
+    constant_expr_dedup_tbl = DedupTbl.create 64;
+    exact_size_expr_dedup_tbl = DedupTbl.create 16;
+    span_dedup_tbl = DedupTbl.create 4096;
   }
 
-let hash_consed_val_of_json (map : 'a HashConsId.Map.t ref)
+(** Values that come up often are deduplicated in the serialized output: the
+    first occurrence of a value is serialized in full along with an id, and
+    later occurrences only mention that id. *)
+let dedup_val_of_json (tbl : 'a DedupTbl.t)
     (of_json : of_json_ctx -> json -> ('a, string) result) (ctx : of_json_ctx)
     (js : json) : ('a, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with
     | `Assoc [ ("Untagged", json) ] -> of_json ctx json
-    | `Assoc [ ("HashConsedValue", `List [ `Int id; json ]) ] ->
+    | `Assoc [ ("Value", `List [ `Int id; json ]) ] ->
         let* v = of_json ctx json in
-        let id = HashConsId.of_int id in
-        map := HashConsId.Map.add id v !map;
+        DedupTbl.replace tbl (DedupId.of_int id) v;
         Ok v
     | `Assoc [ ("Deduplicated", `Int id) ] -> begin
-        let id = HashConsId.of_int id in
-        match HashConsId.Map.find_opt id !map with
+        match DedupTbl.find_opt tbl (DedupId.of_int id) with
         | Some v -> Ok v
         | None ->
             Error
-              "Hash-consing key not found; there is a serialization mismatch \
+              "Deduplication key not found; there is a serialization mismatch \
                between Rust and OCaml"
       end
     | _ -> Error "")
@@ -481,7 +493,7 @@ and constant_expr_of_json (ctx : of_json_ctx) (js : json) :
   combine_error_msgs js __FUNCTION__
     (match js with
     | json ->
-        hash_consed_val_of_json ctx.constant_expr_hashcons_map
+        dedup_val_of_json ctx.constant_expr_dedup_tbl
           (fun ctx json ->
             let* contents =
               pair_of_json constant_expr_kind_of_json ty_of_json ctx json
@@ -839,7 +851,7 @@ and hash_consed_of_json :
  fun arg0_of_json ctx js ->
   combine_error_msgs js __FUNCTION__
     (match js with
-    | json -> Error "use `hash_consed_val_of_json` instead"
+    | json -> Error "use `dedup_val_of_json` instead"
     | _ -> Error "")
 
 and impl_elem_of_json (ctx : of_json_ctx) (js : json) :
@@ -1248,12 +1260,20 @@ and scalar_value_of_json (ctx : of_json_ctx) (js : json) :
 and span_of_json (ctx : of_json_ctx) (js : json) : (span, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with
-    | `Assoc [ ("data", data); ("generated_from_span", generated_from_span) ] ->
-        let* data = span_data_of_json ctx data in
-        let* generated_from_span =
-          option_of_json span_data_of_json ctx generated_from_span
-        in
-        Ok ({ data; generated_from_span } : span)
+    | json ->
+        dedup_val_of_json ctx.span_dedup_tbl
+          (fun ctx json ->
+            match json with
+            | `Assoc
+                [ ("data", data); ("generated_from_span", generated_from_span) ]
+              ->
+                let* data = span_data_of_json ctx data in
+                let* generated_from_span =
+                  option_of_json span_data_of_json ctx generated_from_span
+                in
+                Ok ({ data; generated_from_span } : span)
+            | _ -> Error "")
+          ctx json
     | _ -> Error "")
 
 and span_data_of_json (ctx : of_json_ctx) (js : json) :
@@ -1383,8 +1403,7 @@ and trait_ref_of_json (ctx : of_json_ctx) (js : json) :
   combine_error_msgs js __FUNCTION__
     (match js with
     | json ->
-        hash_consed_val_of_json ctx.tref_hashcons_map trait_ref_contents_of_json
-          ctx json
+        dedup_val_of_json ctx.tref_dedup_tbl trait_ref_contents_of_json ctx json
     | _ -> Error "")
 
 and trait_ref_contents_of_json (ctx : of_json_ctx) (js : json) :
@@ -1471,8 +1490,7 @@ and trait_type_constraint_id_of_json (ctx : of_json_ctx) (js : json) :
 and ty_of_json (ctx : of_json_ctx) (js : json) : (ty, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with
-    | json ->
-        hash_consed_val_of_json ctx.ty_hashcons_map ty_kind_of_json ctx json
+    | json -> dedup_val_of_json ctx.ty_dedup_tbl ty_kind_of_json ctx json
     | _ -> Error "")
 
 and ty_kind_of_json (ctx : of_json_ctx) (js : json) : (ty_kind, string) result =
@@ -2512,7 +2530,7 @@ and exact_size_expr_of_json (ctx : of_json_ctx) (js : json) :
   combine_error_msgs js __FUNCTION__
     (match js with
     | json ->
-        hash_consed_val_of_json ctx.exact_size_expr_hashcons_map
+        dedup_val_of_json ctx.exact_size_expr_dedup_tbl
           exact_size_expr_kind_of_json ctx json
     | _ -> Error "")
 
