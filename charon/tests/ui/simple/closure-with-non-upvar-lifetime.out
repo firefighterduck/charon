@@ -111,7 +111,7 @@ where
     storage_live(_6)
     _6 = &(*(*_4)) with_metadata(copy (*_4).metadata)
     storage_live(_7)
-    _7 = @SliceIndexShared<'_, u8>(move _6, copy _5)
+    _7 = @SliceIndexShared<'_, u8>[{built_in impl Sized for u8}](move _6, copy _5)
     ↳⚡ undefined_behavior
     _0 = copy (*_7)
     storage_dead(_5)

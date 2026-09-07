@@ -1594,7 +1594,7 @@ pub fn sum_array<const N : usize>(a: [u32; N]) -> u32
             storage_live(_10)
             _10 = &a
             storage_live(_11)
-            _11 = @ArrayIndexShared<'_, u32, N>(move _10, copy _7)
+            _11 = @ArrayIndexShared<'_, u32, N>[{built_in impl Sized for u32}](move _10, copy _7)
             ↳⚡ undefined_behavior
             _6 = copy (*_11)
             _8 = copy s panic.+ copy _6

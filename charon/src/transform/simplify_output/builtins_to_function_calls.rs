@@ -19,7 +19,7 @@ fn transform_operation(statement: &mut Statement) {
         ) => {
             if let (TyKind::Ref(_, src_ty, src_kind), TyKind::Ref(_, tgt_ty, tgt_kind)) =
                 (src_ty.kind(), tgt_ty.kind())
-                && let TyKind::Array(elem_ty, len) = src_ty.kind()
+                && let TyKind::Array(elem_ty, len, elem_ty_is_sized) = src_ty.kind()
                 && let TyKind::Slice(..) = tgt_ty.kind()
             {
                 // In MIR terminology, we go from &[T; l] to &[T] which means we
@@ -38,7 +38,7 @@ fn transform_operation(statement: &mut Statement) {
                     [Region::Erased].into(),
                     [elem_ty.clone()].into(),
                     [len.clone()].into(),
-                    [].into(),
+                    elem_ty_is_sized.iter().cloned().collect(),
                 );
                 statement.kind = StatementKind::Call {
                     call: Call {
@@ -51,7 +51,7 @@ fn transform_operation(statement: &mut Statement) {
             }
         }
         // Transform the array aggregates to function calls.
-        StatementKind::Assign(place, Rvalue::Repeat(operand, ty, len)) => {
+        StatementKind::Assign(place, Rvalue::Repeat(operand, ty, len, ty_is_copy)) => {
             // We could avoid the clone operations below if we take the content of
             // the statement. In practice, this shouldn't have much impact.
             let func = FnPtrKind::mk_builtin(BuiltinFunId::ArrayRepeat);
@@ -59,7 +59,7 @@ fn transform_operation(statement: &mut Statement) {
                 [].into(),
                 [ty.clone()].into(),
                 [len.clone()].into(),
-                [].into(),
+                [ty_is_copy.clone()].into(),
             );
             statement.kind = StatementKind::Call {
                 call: Call {
@@ -99,9 +99,9 @@ impl<'a, 'b> IndexVisitor<'a, 'b> {
             return;
         };
 
-        let (ty, len) = match subplace.ty.kind() {
-            TyKind::Array(ty, len) => (ty.clone(), Some(len.clone())),
-            TyKind::Slice(ty) => (ty.clone(), None),
+        let (ty, len, ty_is_sized) = match subplace.ty.kind() {
+            TyKind::Array(ty, len, ty_is_sized) => (ty.clone(), Some(len.clone()), ty_is_sized),
+            TyKind::Slice(ty, ty_is_sized) => (ty.clone(), None, ty_is_sized),
             _ => unreachable!("Indexing can only be done on arrays or slices"),
         };
 
@@ -113,19 +113,19 @@ impl<'a, 'b> IndexVisitor<'a, 'b> {
                 is_range: pe.is_subslice(),
             });
             // Same generics as the array/slice type, except for the extra lifetime.
-            let generics = GenericArgs {
-                types: [ty.clone()].into(),
-                const_generics: len.map(|l| [l].into()).unwrap_or_default(),
-                regions: [Region::Erased].into(),
-                trait_refs: [].into(),
-            };
+            let generics = GenericArgs::new(
+                [Region::Erased].into(),
+                [ty.clone()].into(),
+                len.map(|l| [l].into()).unwrap_or_default(),
+                ty_is_sized.iter().cloned().collect(),
+            );
             FnOperand::Regular(FnPtr::new(FnPtrKind::mk_builtin(builtin_fun), generics))
         };
 
         let output_inner_ty = if matches!(pe, Index { .. }) {
             ty
         } else {
-            TyKind::Slice(ty).into_ty()
+            TyKind::Slice(ty, ty_is_sized.clone()).into_ty()
         };
         let output_ty = {
             TyKind::Ref(
