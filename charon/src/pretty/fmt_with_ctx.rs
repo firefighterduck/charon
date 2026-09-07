@@ -354,10 +354,6 @@ impl Display for BuiltinFunId {
                 let mutability = mutability.variant_name();
                 &format!("{ty}{op}{mutability}")
             }
-            BuiltinFunId::PtrFromParts(mutability) => {
-                let mutability = mutability.variant_name();
-                &format!("PtrFromParts{mutability}")
-            }
         };
         f.write_str(name)
     }

@@ -878,8 +878,7 @@ where
     _10 = copy ptr_7
     storage_live(_11)
     _11 = copy len
-    _0 = @PtrFromPartsShared<'_, [T]>(move _10, move _11)
-    ↳⚡ undefined_behavior
+    _0 = *const (move _10, move _11)
     storage_dead(_11)
     storage_dead(_10)
     storage_dead(ptr_7)
@@ -929,8 +928,7 @@ where
     _10 = copy ptr_7
     storage_live(_11)
     _11 = copy len
-    _0 = @PtrFromPartsMut<'_, [T]>(move _10, move _11)
-    ↳⚡ undefined_behavior
+    _0 = *mut  (move _10, move _11)
     storage_dead(_11)
     storage_dead(_10)
     storage_dead(ptr_7)

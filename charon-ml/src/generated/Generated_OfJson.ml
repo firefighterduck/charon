@@ -337,9 +337,6 @@ and builtin_fun_id_of_json (ctx : of_json_ctx) (js : json) :
     | `Assoc [ ("Index", _0) ] ->
         let* _0 = builtin_index_op_of_json ctx _0 in
         Ok (Index _0)
-    | `Assoc [ ("PtrFromParts", _0) ] ->
-        let* _0 = ref_kind_of_json ctx _0 in
-        Ok (PtrFromParts _0)
     | _ -> Error "")
 
 and builtin_impl_data_of_json (ctx : of_json_ctx) (js : json) :

@@ -316,9 +316,6 @@ and builtin_fun_id_of_postcard (ctx : of_postcard_ctx) (st : postcard_state) :
      | 3 ->
          let* _0 = builtin_index_op_of_postcard ctx st in
          Ok (Index _0)
-     | 4 ->
-         let* _0 = ref_kind_of_postcard ctx st in
-         Ok (PtrFromParts _0)
      | _ -> Error ("unknown enum variant tag: " ^ string_of_int __tag))
 
 and builtin_impl_data_of_postcard (ctx : of_postcard_ctx) (st : postcard_state)

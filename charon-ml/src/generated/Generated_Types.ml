@@ -227,12 +227,6 @@ and builtin_fun_id =
           - [fn ArraySubSliceShared<T,N>(&[T;N], usize, usize) -> &[T]]
           - [fn SliceSubSliceMut<T>(&mut [T], usize, usize) -> &mut [T]]
           - etc *)
-  | PtrFromParts of ref_kind
-      (** Build a raw pointer, from a data pointer and metadata. The metadata
-          can be unit, if building a thin pointer.
-
-          This is used instead of [AggregateKind::RawPtr] when
-          [--ops-to-function-calls] is set. *)
 
 (** Describes a built-in impl. Mostly lists the implemented trait, sometimes
     with more details about the contents of the implementation. *)

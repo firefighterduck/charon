@@ -70,27 +70,6 @@ fn transform_operation(statement: &mut Statement) {
                 on_unwind: Block::new_unreachable(statement.span),
             };
         }
-        // Transform the raw pointer aggregate to a function call.
-        StatementKind::Assign(
-            place,
-            Rvalue::Aggregate(AggregateKind::RawPtr(ty, is_mut), operands),
-        ) => {
-            let func = FnPtrKind::mk_builtin(BuiltinFunId::PtrFromParts(*is_mut));
-            let generics = GenericArgs::new(
-                [Region::Erased].into(),
-                [ty.clone()].into(),
-                [].into(),
-                [].into(),
-            );
-            statement.kind = StatementKind::Call {
-                call: Call {
-                    func: FnOperand::Regular(FnPtr::new(func, generics)),
-                    args: operands.clone(),
-                    dest: place.clone(),
-                },
-                on_unwind: Block::new_unreachable(statement.span),
-            };
-        }
         _ => {}
     }
 }
