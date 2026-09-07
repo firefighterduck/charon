@@ -129,7 +129,7 @@ pub struct SpanData {
 // - For serde 1.0.228, out of 246K spans, 12 didn't fit
 // - For regex 1.11.1, out of 136K spans, 25 didn't fit
 // - For syn 2.0.104, out of 800K spans, 36 didn't fit
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Span(u64);
 
 /// Bit layout of the packed representation of [`Span`].
@@ -168,6 +168,8 @@ mod pack {
     Clone,
     PartialEq,
     Eq,
+    PartialOrd,
+    Ord,
     Hash,
     Serialize,
     Deserialize,
@@ -281,6 +283,23 @@ impl Span {
             }
         };
         Span(index | pack::WIDE_FLAG)
+    }
+}
+
+impl Ord for Span {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if (self.0 | other.0) & pack::WIDE_FLAG == 0 {
+            // Both spans are packed: the bit layout is such that comparing the packed values is
+            // the same as comparing `(file, beg, end)`, so take the fast path.
+            self.0.cmp(&other.0)
+        } else {
+            self.unpack().cmp(&other.unpack())
+        }
+    }
+}
+impl PartialOrd for Span {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
