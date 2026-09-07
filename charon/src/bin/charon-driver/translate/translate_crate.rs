@@ -255,6 +255,18 @@ impl<'tcx> TranslateCtx<'tcx> {
         })
     }
 
+    /// Resolve a path that is expected to name exactly one item.
+    pub fn resolve_single_path(
+        &self,
+        span: Span,
+        pat: &NamePattern,
+    ) -> Result<rustc_span::def_id::DefId, Error> {
+        self.resolve_path(span, pat, true)?
+            .into_iter()
+            .exactly_one()
+            .map_err(|_| register_error!(self, span, "expected exactly one item for path `{pat}`"))
+    }
+
     /// Returns the default translation kind for the given `DefId`. Returns `None` for items that
     /// we don't translate. Errors on unexpected items.
     pub fn base_kind_for_item(&mut self, def_id: &hax::DefId) -> Option<TransItemSourceKind> {
