@@ -1,7 +1,5 @@
 use crate::utils::dedup::*;
-use derive_generic_visitor::{
-    Break, Continue, ControlFlow, Drive, DriveMut, DriveTwo, VisitMut, Visitor,
-};
+use derive_generic_visitor::{ControlFlow, Drive, DriveMut, DriveTwo, Visit, VisitMut, VisitTwo};
 use serde::{Deserialize, Serialize};
 use serde_state::{DeserializeState, SerializeState};
 use std::collections::HashMap;
@@ -131,8 +129,6 @@ pub struct SpanData {
 // - For serde 1.0.228, out of 246K spans, 12 didn't fit
 // - For regex 1.11.1, out of 136K spans, 25 didn't fit
 // - For syn 2.0.104, out of 800K spans, 36 didn't fit
-// Ordering is the ordering of the packed value: for packed spans the layout above makes this the
-// source order (file, then start, then extent); wide spans sort last.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span(u64);
 
@@ -177,6 +173,9 @@ mod pack {
     Deserialize,
     SerializeState,
     DeserializeState,
+    Drive,
+    DriveMut,
+    DriveTwo,
 )]
 #[cfg_attr(feature = "charon_on_charon", charon::rename("Span"))]
 #[serde_state(stateless)]
@@ -329,33 +328,31 @@ impl std::fmt::Debug for Span {
     }
 }
 
-/// A `Span` has no contents to visit: what it contains is packed into an integer. We must however
-/// let mutable visitors edit the `FileId`s inside, as the multi-target export relies on this to
-/// renumber files.
-impl<'s, V: Visitor> Drive<'s, V> for Span {
-    fn drive_inner(&'s self, _v: &mut V) -> ControlFlow<V::Break> {
-        Continue(())
+impl<'s, V> Drive<'s, V> for Span
+where
+    V: for<'a> Visit<'a, SerializedSpan> + for<'a> Visit<'a, Option<SerializedSpan>>,
+{
+    fn drive_inner(&'s self, v: &mut V) -> ControlFlow<V::Break> {
+        v.visit(&self.unpack())
     }
 }
 impl<'s, V> DriveMut<'s, V> for Span
 where
-    V: for<'a> VisitMut<'a, SpanData> + for<'a> VisitMut<'a, Option<SpanData>>,
+    V: for<'a> VisitMut<'a, SerializedSpan> + for<'a> VisitMut<'a, Option<SerializedSpan>>,
 {
     fn drive_inner_mut(&'s mut self, v: &mut V) -> ControlFlow<V::Break> {
         let mut span = self.unpack();
-        v.visit(&mut span.data)?;
-        v.visit(&mut span.generated_from_span)?;
+        let res = v.visit(&mut span);
         *self = Span::from_unpacked(span);
-        Continue(())
+        res
     }
 }
-impl<'s, V: Visitor<Break: Default>> DriveTwo<'s, V> for Span {
-    fn drive_two_inner(&'s self, other: &'s Self, _v: &mut V) -> ControlFlow<V::Break> {
-        if self == other {
-            Continue(())
-        } else {
-            Break(Default::default())
-        }
+impl<'s, V> DriveTwo<'s, V> for Span
+where
+    V: for<'a> VisitTwo<'a, SerializedSpan> + for<'a> VisitTwo<'a, Option<SerializedSpan>>,
+{
+    fn drive_two_inner(&'s self, other: &'s Self, v: &mut V) -> ControlFlow<V::Break> {
+        v.visit(&self.unpack(), &other.unpack())
     }
 }
 
