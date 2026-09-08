@@ -259,11 +259,13 @@ fn op_to_const<'tcx, S: UnderOwnerState<'tcx>>(
         })
     };
     let kind = match ty.kind() {
-        // Detect statics
+        // Preserve references to statics. Nested statics are are synthetic items that make the
+        // rest of the machinery ICE, so we don't turn them into named globals here.
         _ if let Some(place) = op.as_mplace_or_imm().left()
             && let ptr = place.ptr()
             && let Some((alloc_id, _, _)) = ecx.ptr_get_alloc_id(ptr, 0).discard_err()
-            && let interpret::GlobalAlloc::Static(did) = tcx.global_alloc(alloc_id) =>
+            && let interpret::GlobalAlloc::Static(did) = tcx.global_alloc(alloc_id)
+            && let rustc_hir::def::DefKind::Static { nested: false, .. } = tcx.def_kind(did) =>
         {
             let item = translate_item_ref(s, did, ty::GenericArgsRef::default());
             ConstantExprKind::NamedGlobal(item)
