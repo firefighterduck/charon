@@ -558,6 +558,14 @@ impl ScalarValue {
             TyKind::Literal(literal_ty).into_ty(),
         )
     }
+
+    pub(crate) fn mk_zero_usize() -> Self {
+        ScalarValue::Unsigned(UIntTy::Usize, 0)
+    }
+
+    pub(crate) fn mk_one_usize() -> Self {
+        ScalarValue::Unsigned(UIntTy::Usize, 1)
+    }
 }
 
 /// Custom serializer that stores 128 bit integers as strings to avoid overflow.
